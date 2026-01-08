@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}UczeLni{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% if session.get('user_id') %}
+    <nav class="navbar">
+    <div class="navbar-brand">UczeLni</div>
+    <div class="navbar-menu">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+
+    {% if session.get('role') == 'admin' %}
+        <a href="{{ url_for('main.admin_panel') }}">Panel administratora</a>
+    {% elif session.get('role') == 'lecturer' %}
+        <a href="{{ url_for('main.lecturer_courses') }}">Moje kursy</a>
+    {% endif %}
+
+    <span>Zalogowany jako: {{ session.get('username') }}</span>
+    <a href="{{ url_for('auth.logout') }}">Wyloguj</a>
+</div>
+
+</nav>
+
+    {% endif %}
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

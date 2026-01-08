@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Moje kursy - {{ lecturer.full_name }}{% endblock %}
+
+{% block content %}
+<h1>Moje kursy</h1>
+<p>Zalogowany wykładowca: <strong>{{ lecturer.full_name }}</strong></p>
+
+<div class="grid">
+    <!-- Kursy -->
+    <div class="card">
+        <h2>Prowadzone kursy</h2>
+
+        {% if courses %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kod</th>
+                        <th>Nazwa</th>
+                        <th>ECTS</th>
+                        <th>Aktywny?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in courses %}
+                    <tr>
+                        <td>{{ c.code }}</td>
+                        <td>{{ c.name }}</td>
+                        <td>{{ c.ects }}</td>
+                        <td>
+                            {% if c.is_active %}
+                                <span class="badge badge-success">TAK</span>
+                            {% else %}
+                                <span class="badge badge-danger">NIE</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>Nie prowadzisz jeszcze żadnych kursów.</p>
+        {% endif %}
+    </div>
+
+    <!-- Grupy -->
+    <div class="card">
+        <h2>Moje grupy zajęciowe</h2>
+
+        {% if groups %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Grupa</th>
+                        <th>Kurs</th>
+                        <th>Semestr</th>
+                        <th>Rok</th>
+                        <th>Studenci</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in groups %}
+                    <tr>
+                        <td>{{ g.name }}</td>
+                        <td>{{ g.course.code }} - {{ g.course.name }}</td>
+                        <td>{{ g.semester or "-" }}</td>
+                        <td>{{ g.year or "-" }}</td>
+                        <td>
+                            <a class="btn-secondary" href="{{ url_for('main.admin_group_students', group_id=g.id) }}">
+                                Lista studentów
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>Nie masz przypisanych żadnych grup zajęciowych.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

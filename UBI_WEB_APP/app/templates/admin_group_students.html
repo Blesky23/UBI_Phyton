@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Studenci w grupie - {{ group.name }}{% endblock %}
+
+{% block content %}
+<h1>Studenci w grupie: {{ group.name }}</h1>
+<p>
+    Kurs: <strong>{{ group.course.code }} - {{ group.course.name }}</strong><br>
+    Prowadzący: <strong>{{ group.lecturer.full_name }}</strong>
+</p>
+
+<p>
+    <a href="{{ url_for('main.admin_groups') }}">&larr; Powrót do listy grup</a>
+</p>
+
+{% if message %}
+<div class="alert-success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="alert-error">{{ error }}</div>
+{% endif %}
+
+<div class="grid">
+    <!-- Formularz dodawania studenta -->
+    <div class="card">
+        <h2>Dodaj studenta do grupy</h2>
+
+        <form method="POST">
+            <label for="student_id">Student:</label>
+            <select id="student_id" name="student_id" required>
+                <option value="">-- wybierz studenta --</option>
+                {% for s in students %}
+                    <option value="{{ s.id }}">{{ s.last_name }} {{ s.first_name }} ({{ s.username }})</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Dodaj do grupy</button>
+        </form>
+    </div>
+
+    <!-- Lista studentów w grupie -->
+    <div class="card">
+        <h2>Lista zapisanych studentów</h2>
+
+        {% if enrollments %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Imię i nazwisko</th>
+                        <th>Login</th>
+                        <th>Email</th>
+                        <th>Data zapisu</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in enrollments %}
+                    <tr>
+                        <td>{{ e.student.full_name }}</td>
+                        <td>{{ e.student.username }}</td>
+                        <td>{{ e.student.email }}</td>
+                        <td>{{ e.created_at.strftime("%d.%m.%Y %H:%M") }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('main.admin_remove_enrollment', enrollment_id=e.id) }}">
+                                <button type="submit" class="btn-secondary">Usuń z grupy</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>Brak studentów zapisanych do tej grupy.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

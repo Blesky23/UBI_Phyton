@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Grupy zajęciowe - Panel administratora{% endblock %}
+
+{% block content %}
+<h1>Zarządzanie grupami zajęciowymi</h1>
+
+{% if message %}
+<div class="alert-success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="alert-error">{{ error }}</div>
+{% endif %}
+
+<div class="grid">
+    <!-- Formularz dodawania grupy -->
+    <div class="card">
+        <h2>Dodaj nową grupę</h2>
+        <form method="POST">
+            <label for="name">Nazwa grupy:</label>
+            <input type="text" id="name" name="name" placeholder="np. Grupa A" required>
+
+            <label for="course_id">Kurs:</label>
+            <select id="course_id" name="course_id" required>
+                <option value="">-- wybierz kurs --</option>
+                {% for c in courses %}
+                    <option value="{{ c.id }}">{{ c.code }} - {{ c.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="lecturer_id">Prowadzący:</label>
+            <select id="lecturer_id" name="lecturer_id" required>
+                <option value="">-- wybierz wykładowcę --</option>
+                {% for lect in lecturers %}
+                    <option value="{{ lect.id }}">{{ lect.last_name }} {{ lect.first_name }} ({{ lect.username }})</option>
+                {% endfor %}
+            </select>
+
+            <label for="semester">Semestr (opcjonalnie):</label>
+            <input type="number" id="semester" name="semester" min="1" max="10">
+
+            <label for="year">Rok akademicki (opcjonalnie):</label>
+            <input type="number" id="year" name="year" min="2000" max="2100">
+
+            <button type="submit">Utwórz grupę</button>
+        </form>
+    </div>
+
+    <!-- Lista grup -->
+    <div class="card">
+        <h2>Lista grup</h2>
+
+        {% if groups %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nazwa grupy</th>
+                        <th>Kurs</th>
+                        <th>Prowadzący</th>
+                        <th>Semestr</th>
+                        <th>Rok</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in groups %}
+                    <tr>
+                        <td>{{ g.name }}</td>
+                        <td>{{ g.course.code }} - {{ g.course.name }}</td>
+                        <td>{{ g.lecturer.full_name }}</td>
+                        <td>{{ g.semester or "-" }}</td>
+                        <td>{{ g.year or "-" }}</td>
+                        <td>
+                            <a class="btn-secondary" href="{{ url_for('main.admin_group_students', group_id=g.id) }}"> Studenci
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>Brak grup zajęciowych w systemie.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - UczeLni{% endblock %}
+
+{% block content %}
+<h1>Witaj, {{ user.full_name }}!</h1>
+
+<div class="grid">
+    <div class="card">
+        <h2>Twoje konto</h2>
+        <p><strong>Nazwa użytkownika:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Rola:</strong> {{ user.role.value }}</p>
+        {% if user.last_login %}
+        <p><strong>Ostatnie logowanie:</strong> {{ user.last_login.strftime("%d.%m.%Y %H:%M") }}</p>
+        {% endif %}
+    </div>
+
+    {% if user.is_student() %}
+    <div class="card">
+        <h2>Panel studenta</h2>
+        <p>Tu później dodamy: kursy, oceny, płatności, plan zajęć.</p>
+    </div>
+    {% elif user.is_lecturer() %}
+    {% if user.is_admin() %}
+<div class="card">
+    <h2>Panel administratora</h2>
+    <p>Tu później dodamy: zarządzanie użytkownikami, kursami, raporty i statystyki.</p>
+    <a class="btn" href="{{ url_for('main.admin_panel') }}">Wejdź do panelu administratora</a>
+</div>
+{% endif %}
+
+    {% elif user.is_admin() %}
+    <div class="card">
+        <h2>Panel administratora</h2>
+        <p>Tu później dodamy: zarządzanie użytkownikami, kursami, raporty i statystyki.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

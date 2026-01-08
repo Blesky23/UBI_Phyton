@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Użytkownicy - Panel administratora{% endblock %}
+
+{% block content %}
+<h1>Zarządzanie użytkownikami</h1>
+
+{% if message %}
+<div class="alert-success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="alert-error">{{ error }}</div>
+{% endif %}
+
+<div class="grid">
+    <!-- Formularz dodawania nowego użytkownika -->
+    <div class="card">
+        <h2>Dodaj nowego użytkownika</h2>
+        <form method="POST">
+            <label for="username">Nazwa użytkownika (login):</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="email">Adres e‑mail:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="first_name">Imię:</label>
+            <input type="text" id="first_name" name="first_name" required>
+
+            <label for="last_name">Nazwisko:</label>
+            <input type="text" id="last_name" name="last_name" required>
+
+            <label for="password">Hasło:</label>
+            <input type="password" id="password" name="password" required>
+
+            <label for="role">Rola:</label>
+            <select id="role" name="role">
+                <option value="student">Student</option>
+                <option value="lecturer">Wykładowca</option>
+                <option value="admin">Administrator</option>
+            </select>
+
+            <button type="submit">Utwórz użytkownika</button>
+        </form>
+    </div>
+
+    <!-- Lista istniejących użytkowników -->
+    <div class="card">
+        <h2>Lista użytkowników</h2>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Login</th>
+                        <th>Imię i nazwisko</th>
+                        <th>E‑mail</th>
+                        <th>Rola</th>
+                        <th>Aktywny?</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.id }}</td>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.full_name }}</td>
+                        <td>{{ u.email }}</td>
+                        <td>{{ u.role.value }}</td>
+                        <td>
+                            {% if u.is_active %}
+                                <span class="badge badge-success">TAK</span>
+                            {% else %}
+                                <span class="badge badge-danger">NIE</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u.id != session.get('user_id') %}
+                            <form method="POST" action="{{ url_for('main.admin_toggle_user', user_id=u.id) }}" style="display:inline;">
+                                <button type="submit" class="btn-secondary">
+                                    {% if u.is_active %}Dezaktywuj{% else %}Aktywuj{% endif %}
+                                </button>
+                            </form>
+                            {% else %}
+                                <span class="badge">To Ty</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

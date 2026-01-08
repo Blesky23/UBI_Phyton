@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Logowanie - UczeLni{% endblock %}
+
+{% block content %}
+<div class="card login-card">
+    <h1>System UczeLni</h1>
+    <h2>Panel logowania</h2>
+
+    {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        <label for="username">Nazwa użytkownika:</label>
+        <input type="text" id="username" name="username" placeholder="np. admin" required>
+
+        <label for="password">Hasło:</label>
+        <input type="password" id="password" name="password" placeholder="Twoje hasło" required>
+
+        <button type="submit">Zaloguj</button>
+    </form>
+
+    <p class="hint">
+        Konta testowe:<br>
+        admin / admin123 (admin)<br>
+        prowadz1 / pass123 (wykładowca)<br>
+        student1 / pass123 (student)
+    </p>
+</div>
+{% endblock %}

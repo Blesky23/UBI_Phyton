@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Panel administratora - UczeLni{% endblock %}
+
+{% block content %}
+<h1>Panel administratora</h1>
+
+<div class="grid">
+    <div class="card">
+        <h2>Użytkownicy</h2>
+        <p>Zarządzaj kontami użytkowników systemu (studenci, wykładowcy, administratorzy).</p>
+        <a class="btn" href="{{ url_for('main.admin_users') }}">Przejdź do listy użytkowników</a>
+    </div>
+
+    <div class="card">
+        <h2>Kursy</h2>
+        <p>Dodawanie i przegląd kursów oraz przypisywanie prowadzących.</p>
+        <a class="btn" href="{{ url_for('main.admin_courses') }}">Zarządzaj kursami</a>
+    </div>
+
+    <div class="card">
+        <h2>Inne moduły</h2>
+        <p>Tu później dodamy zarządzanie grupami, planem zajęć, raportami.</p>
+    </div>
+
+
+    <div class="card">
+        <h2>Grupy zajęciowe</h2>
+        <p>Tworzenie grup dla kursów i przypisywanie prowadzących.</p>
+        <a class="btn" href="{{ url_for('main.admin_groups') }}">Zarządzaj grupami</a>
+    </div>
+</div>
+{% endblock %}

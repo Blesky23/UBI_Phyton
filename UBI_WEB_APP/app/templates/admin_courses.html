@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Kursy - Panel administratora{% endblock %}
+
+{% block content %}
+<h1>Zarządzanie kursami</h1>
+
+{% if message %}
+<div class="alert-success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="alert-error">{{ error }}</div>
+{% endif %}
+
+<div class="grid">
+    <!-- Formularz dodawania kursu -->
+    <div class="card">
+        <h2>Dodaj nowy kurs</h2>
+        <form method="POST">
+            <label for="code">Kod kursu:</label>
+            <input type="text" id="code" name="code" placeholder="np. INF101" required>
+
+            <label for="name">Nazwa kursu:</label>
+            <input type="text" id="name" name="name" placeholder="np. Programowanie 1" required>
+
+            <label for="ects">Punkty ECTS:</label>
+            <input type="number" id="ects" name="ects" min="0" value="0" required>
+
+            <label for="lecturer_id">Prowadzący (wykładowca):</label>
+            <select id="lecturer_id" name="lecturer_id" required>
+                <option value="">-- wybierz wykładowcę --</option>
+                {% for lect in lecturers %}
+                    <option value="{{ lect.id }}">{{ lect.last_name }} {{ lect.first_name }} ({{ lect.username }})</option>
+                {% endfor %}
+            </select>
+
+            <label for="description">Opis kursu (opcjonalnie):</label>
+            <textarea id="description" name="description" rows="4"></textarea>
+
+            <button type="submit">Utwórz kurs</button>
+        </form>
+    </div>
+
+    <!-- Lista kursów -->
+    <div class="card">
+        <h2>Lista kursów</h2>
+        
+        {% if courses %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kod</th>
+                        <th>Nazwa</th>
+                        <th>ECTS</th>
+                        <th>Prowadzący</th>
+                        <th>Aktywny?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in courses %}
+                    <tr>
+    <td>{{ c.code }}</td>
+    <td>{{ c.name }}</td>
+    <td>{{ c.ects }}</td>
+    <td>{{ c.lecturer.full_name }}</td>
+    <td>
+        {% if c.is_active %}
+            <span class="badge badge-success">TAK</span>
+        {% else %}
+            <span class="badge badge-danger">NIE</span>
+        {% endif %}
+    </td>
+    <td>
+        <form method="POST" action="{{ url_for('main.admin_toggle_course', course_id=c.id) }}">
+            <button type="submit" class="btn-secondary">
+                {% if c.is_active %}Dezaktywuj{% else %}Aktywuj{% endif %}
+            </button>
+        </form>
+    </td>
+</tr>
+
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>Brak kursów w systemie.</p>
+        {% endif %}
+    </div>
+</div>
+
+
+@main_bp.route("/admin/groups", methods=["GET", "POST"])
+@admin_required
+def admin_groups():
+    """
+    Panel administratora: zarządzanie grupami zajęciowymi.
+
+    GET:
+        - lista wszystkich grup,
+        - formularz dodania nowej grupy.
+
+    POST:
+        - tworzy nową grupę na podstawie danych z formularza.
+    """
+    from app import db
+    from app.models import ClassGroup, Course, User, UserRole
+
+    message = None
+    error = None
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        course_id = request.form.get("course_id", "").strip()
+        lecturer_id = request.form.get("lecturer_id", "").strip()
+        semester = request.form.get("semester", "").strip()
+        year = request.form.get("year", "").strip()
+
+        if not name or not course_id or not lecturer_id:
+            error = "Pola: nazwa grupy, kurs i prowadzący są wymagane."
+        else:
+            try:
+                semester_int = int(semester) if semester else None
+                year_int = int(year) if year else None
+            except ValueError:
+                error = "Semestr i rok muszą być liczbami."
+            else:
+                course = Course.query.get(int(course_id))
+                lecturer = User.query.get(int(lecturer_id))
+
+                if not course:
+                    error = "Wybrany kurs nie istnieje."
+                elif not lecturer or lecturer.role != UserRole.LECTURER:
+                    error = "Wybrany prowadzący nie jest wykładowcą."
+                else:
+                    new_group = ClassGroup(
+                        name=name,
+                        course_id=course.id,
+                        lecturer_id=lecturer.id,
+                        semester=semester_int,
+                        year=year_int,
+                    )
+                    db.session.add(new_group)
+                    db.session.commit()
+                    message = "Grupa została utworzona."
+
+    from app.models import ClassGroup, Course, User, UserRole
+
+    groups = (
+        ClassGroup.query
+        .order_by(ClassGroup.year.desc(), ClassGroup.semester.desc(), ClassGroup.name.asc())
+        .all()
+    )
+    courses = Course.query.filter_by(is_active=True).order_by(Course.code.asc()).all()
+    lecturers = User.query.filter_by(role=UserRole.LECTURER).order_by(User.last_name.asc()).all()
+
+    return render_template(
+        "admin_groups.html",
+        groups=groups,
+        courses=courses,
+        lecturers=lecturers,
+        message=message,
+        error=error,
+    )
+
+{% endblock %}
