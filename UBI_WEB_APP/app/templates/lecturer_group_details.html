@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Grupa {{ group.name }} - Panel Wykładowcy{% endblock %}
+
+{% block content %}
+<h1>Grupa: {{ group.name }}</h1>
+<p class="subtitle">Kurs: {{ group.course.name }} ({{ group.course.code }}) | Semestr: {{ group.semester }}</p>
+
+<p>
+    <a href="{{ url_for('main.lecturer_courses') }}">&larr; Wróć do listy moich kursów</a>
+</p>
+
+{% if message %}
+<div class="alert-success">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="alert-error">{{ error }}</div>
+{% endif %}
+
+<div class="grid">
+    <!-- KARTA 1: Wystawianie oceny -->
+    <div class="card">
+        <h2>Wystaw ocenę</h2>
+        <form method="POST">
+            <label for="student_id">Student:</label>
+            <select id="student_id" name="student_id" required>
+                <option value="">-- Wybierz studenta --</option>
+                {% for enrollment in enrollments %}
+                    <option value="{{ enrollment.student.id }}">
+                        {{ enrollment.student.last_name }} {{ enrollment.student.first_name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <label for="label">Tytuł oceny (np. Kolokwium 1):</label>
+            <input type="text" id="label" name="label" placeholder="np. Projekt końcowy" required>
+
+            <label for="grade_value">Ocena:</label>
+            <select id="grade_value" name="grade_value" required>
+                <option value="2.0">2.0 (Niedostateczny)</option>
+                <option value="3.0">3.0 (Dostateczny)</option>
+                <option value="3.5">3.5 (Dość dobry)</option>
+                <option value="4.0">4.0 (Dobry)</option>
+                <option value="4.5">4.5 (Ponad dobry)</option>
+                <option value="5.0">5.0 (Bardzo dobry)</option>
+            </select>
+
+            <label for="weight">Waga (domyślnie 1.0):</label>
+            <input type="number" id="weight" name="weight" value="1.0" step="0.5" min="0">
+
+            <button type="submit" style="margin-top: 15px;">Wystaw ocenę</button>
+        </form>
+    </div>
+
+    <!-- KARTA 2: Dziennik ocen -->
+    <div class="card">
+        <h2>Dziennik ocen</h2>
+        
+        {% if enrollments %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Oceny w tej grupie</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                    <tr>
+                        <td>
+                            <strong>{{ enrollment.student.last_name }} {{ enrollment.student.first_name }}</strong><br>
+                            <small>{{ enrollment.student.index_number }}</small>
+                        </td>
+                        <td>
+                            {% for grade in enrollment.student.grades %}
+                                {% if grade.group_id == group.id %}
+                                    <span class="badge" title="{{ grade.label }} (Waga: {{ grade.weight }})">
+                                        {{ grade.value }}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>Brak studentów zapisanych do tej grupy.</p>
+        {% endif %}
+    </div>
+
+    <!-- KARTA 3: Zaplanuj zajęcia -->
+    <div class="card">
+        <h2>Zaplanuj zajęcia</h2>
+        <form method="POST">
+            <!-- Tytuł lekcji -->
+            <label for="lesson_title">Temat / Typ zajęć:</label>
+            <input type="text" id="lesson_title" name="lesson_title" placeholder="np. Wykład 1, Lab 3" required>
+
+            <!-- Data -->
+            <label for="lesson_date">Data:</label>
+            <input type="date" id="lesson_date" name="lesson_date" required>
+
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label for="lesson_start">Od:</label>
+                    <input type="time" id="lesson_start" name="lesson_start" required>
+                </div>
+                <div style="flex: 1;">
+                    <label for="lesson_end">Do:</label>
+                    <input type="time" id="lesson_end" name="lesson_end" required>
+                </div>
+            </div>
+
+            <!-- Sala -->
+            <label for="lesson_room">Sala (opcjonalnie):</label>
+            <input type="text" id="lesson_room" name="lesson_room" placeholder="np. 204, Aula A">
+
+            <button type="submit" style="margin-top: 15px; background-color: #5E5240;">Dodaj do kalendarza</button>
+        </form>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+
+        <h3>Zaplanowane lekcje ({{ lessons|length }})</h3>
+        {% if lessons %}
+        <ul style="list-style: none; padding: 0;">
+            {% for lesson in lessons %}
+            <li style="padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9em;">
+                <strong>{{ lesson.title }}</strong><br>
+                {{ lesson.start_time.strftime('%d.%m.%Y') }} | 
+                {{ lesson.start_time.strftime('%H:%M') }} - {{ lesson.end_time.strftime('%H:%M') }}
+                {% if lesson.room %} (Sala: {{ lesson.room }}) {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p style="color: #888;">Brak zaplanowanych zajęć.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

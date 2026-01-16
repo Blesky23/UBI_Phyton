@@ -69,8 +69,8 @@
                         <td>{{ g.semester or "-" }}</td>
                         <td>{{ g.year or "-" }}</td>
                         <td>
-                            <a class="btn-secondary" href="{{ url_for('main.admin_group_students', group_id=g.id) }}">
-                                Lista studentów
+                            <a class="btn-secondary" href="{{ url_for('main.lecturer_group_details', group_id=g.id) }}">
+                                Dziennik i Studenci
                             </a>
                         </td>
                     </tr>

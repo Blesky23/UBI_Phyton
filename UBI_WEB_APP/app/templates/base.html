@@ -2,13 +2,13 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}UczeLni{% endblock %}</title>
+    <title>{% block title %}UBI Bardzo znana uczelnia{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     {% if session.get('user_id') %}
     <nav class="navbar">
-    <div class="navbar-brand">UczeLni</div>
+    <div class="navbar-brand">Uczelnia</div>
     <div class="navbar-menu">
     <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
 
@@ -21,6 +21,11 @@
     <span>Zalogowany jako: {{ session.get('username') }}</span>
     <a href="{{ url_for('auth.logout') }}">Wyloguj</a>
 </div>
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('main.calendar_view') }}">
+        <i class="fas fa-calendar-alt"></i> Plan Zajęć
+    </a>
+</li>
 
 </nav>
 

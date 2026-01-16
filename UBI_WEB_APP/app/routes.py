@@ -478,3 +478,139 @@ def lecturer_courses():
         courses=courses,
         groups=groups,
     )
+
+
+
+@main_bp.route("/lecturer/groups/<int:group_id>", methods=["GET", "POST"])
+@lecturer_required
+def lecturer_group_details(group_id):
+    """
+    Szczegóły grupy: Oceny + Planowanie Lekcji
+    """
+    from app import db
+    from app.models import ClassGroup, Enrollment, User, Grade, Lesson
+    from datetime import datetime
+
+    group = ClassGroup.query.get_or_404(group_id)
+    
+    # Zabezpieczenie: czy to grupa tego wykładowcy?
+    current_user_id = session.get("user_id")
+    if group.lecturer_id != current_user_id:
+        return abort(403)
+
+    message = None
+    error = None
+
+    if request.method == "POST":
+        # Rozróżniamy formularze po ukrytym polu 'action' lub sprawdzamy, które pola przyszły
+        # Tutaj sprawdzimy po prostu obecność pól
+        
+        # --- Obsługa dodawania OCENY ---
+        if "grade_value" in request.form:
+            student_id = request.form.get("student_id")
+            grade_value = request.form.get("grade_value")
+            label = request.form.get("label")
+            weight = request.form.get("weight", "1.0")
+
+            if not student_id or not grade_value or not label:
+                error = "Uzupełnij wszystkie pola oceny."
+            else:
+                try:
+                    new_grade = Grade(
+                        student_id=int(student_id),
+                        group_id=group.id,
+                        label=label,
+                        value=float(grade_value),
+                        weight=float(weight)
+                    )
+                    db.session.add(new_grade)
+                    db.session.commit()
+                    message = "Ocena dodana."
+                except ValueError:
+                    error = "Błąd danych liczbowych."
+
+        # --- Obsługa dodawania LEKCJI (Nowe!) ---
+        elif "lesson_title" in request.form:
+            title = request.form.get("lesson_title")
+            date_str = request.form.get("lesson_date") # YYYY-MM-DD
+            start_str = request.form.get("lesson_start") # HH:MM
+            end_str = request.form.get("lesson_end")     # HH:MM
+            room = request.form.get("lesson_room")
+
+            if not title or not date_str or not start_str or not end_str:
+                error = "Uzupełnij dane lekcji (Tytuł, Data, Godziny)."
+            else:
+                try:
+                    # Łączymy datę z godziną
+                    start_dt = datetime.strptime(f"{date_str} {start_str}", "%Y-%m-%d %H:%M")
+                    end_dt = datetime.strptime(f"{date_str} {end_str}", "%Y-%m-%d %H:%M")
+
+                    if end_dt <= start_dt:
+                        error = "Godzina zakończenia musi być późniejsza niż rozpoczęcia."
+                    else:
+                        new_lesson = Lesson(
+                            group_id=group.id,
+                            title=title,
+                            start_time=start_dt,
+                            end_time=end_dt,
+                            room=room
+                        )
+                        db.session.add(new_lesson)
+                        db.session.commit()
+                        message = "Lekcja zaplanowana."
+                except ValueError:
+                    error = "Błędny format daty/godziny."
+
+    # --- Pobieranie danych (GET) ---
+    enrollments = (
+        Enrollment.query
+        .filter_by(group_id=group.id, is_active=True)
+        .join(User, Enrollment.student_id == User.id)
+        .order_by(User.last_name.asc())
+        .all()
+    )
+
+    # Pobieramy też listę już zaplanowanych lekcji dla tej grupy
+    lessons = Lesson.query.filter_by(group_id=group.id).order_by(Lesson.start_time.asc()).all()
+
+    return render_template(
+        "lecturer_group_details.html",
+        group=group,
+        enrollments=enrollments,
+        lessons=lessons,  # Przekazujemy lekcje do szablonu
+        message=message,
+        error=error
+    )
+
+@main_bp.route("/api/calendar/events")
+def api_calendar_events():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify([])
+
+    lessons = Lesson.query.join(Group).filter(Group.lecturer_id == user_id).all()
+    
+    events = []
+    for lesson in lessons:
+        events.append({
+            "id": lesson.id,  # Ważne do linków (np. edycja)
+            "title": f"{lesson.topic}",
+            "start": lesson.date.isoformat(),
+            "end": lesson.end_date.isoformat() if lesson.end_date else None,
+            # Dodatkowe pola (trafią do extendedProps w JS):
+            "room": "Sala 101", # Jeśli masz to w bazie: lesson.room
+            "group_name": lesson.group.name,
+            "description": "Brak dodatkowego opisu" # lub lesson.description
+        })
+
+    return jsonify(events)
+
+@main_bp.route("/calendar")
+def calendar_view():
+    """Wyświetla stronę z kalendarzem (frontend)."""
+    # Sprawdzamy czy zalogowany (opcjonalne, ale zalecane)
+    if not session.get("user_id"):
+        return redirect(url_for("auth.login"))
+        
+    return render_template("calendar.html")
+
