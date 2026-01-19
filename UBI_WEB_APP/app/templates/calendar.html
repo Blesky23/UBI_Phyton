@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Twój Plan Zajęć{% endblock %}
+
+{% block content %}
+
+<!-- 1. STYL BOOTSTRAP (Naprawia wygląd panelu bocznego) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Plan Zajęć</h2>
+    </div>
+
+    <!-- 2. MIEJSCE NA KALENDARZ -->
+    <div class="card shadow">
+        <div class="card-body">
+            <div id='calendar'></div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. UKRYTY PANEL BOCZNY (OFFCANVAS) -->
+<!-- To jest ten element, który "wyjeżdża" z prawej strony -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="lessonDetailsPanel" aria-labelledby="offcanvasRightLabel">
+  <div class="offcanvas-header bg-primary text-white">
+    <h5 id="offcanvasRightLabel">Szczegóły zajęć</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    
+    <!-- Puste pola, które wypełni JavaScript po kliknięciu -->
+    <h3 id="panelTopic" class="mb-3 fw-bold text-primary">Temat</h3>
+    
+    <div class="mb-3">
+        <label class="text-muted small">Grupa</label>
+        <div id="panelGroup" class="fw-bold fs-5">-</div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-6">
+            <label class="text-muted small">Data</label>
+            <div id="panelDate">-</div>
+        </div>
+        <div class="col-6">
+            <label class="text-muted small">Godziny</label>
+            <div id="panelTime">-</div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="text-muted small">Sala</label>
+        <div id="panelRoom" class="badge bg-secondary">-</div>
+    </div>
+
+    <hr>
+    
+    <div class="mb-4">
+        <label class="text-muted small">Opis</label>
+        <p id="panelDesc">Brak opisu.</p>
+    </div>
+
+    <div class="d-grid gap-2">
+        <a id="btnAttendance" href="#" class="btn btn-success">Sprawdź obecność</a>
+        <a id="btnEdit" href="#" class="btn btn-outline-primary">Edytuj</a>
+    </div>
+  </div>
+</div>
+
+<!-- 4. SKRYPTY -->
+<!-- Bootstrap Bundle (potrzebny do działania panelu) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- FullCalendar -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    
+    // Inicjalizacja panelu bocznego
+    var detailsPanelElement = document.getElementById('lessonDetailsPanel');
+    var detailsPanel = new bootstrap.Offcanvas(detailsPanelElement);
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'timeGridWeek',
+      locale: 'pl',
+      firstDay: 1, // Poniedziałek
+      slotMinTime: "08:00:00",
+      slotMaxTime: "21:00:00",
+      allDaySlot: false,
+      height: 750, // Wysokość kalendarza (ważne!)
+      
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek'
+      },
+
+      // Pobieranie danych z Twojego API
+      events: '/api/calendar/events',
+
+      // Co się dzieje po kliknięciu w lekcję
+      eventClick: function(info) {
+        info.jsEvent.preventDefault(); // Zablokuj standardowe kliknięcie
+        
+        // Pobierz dane z klikniętego kafelka
+        var props = info.event.extendedProps;
+        
+        // Wstaw dane do panelu bocznego
+        document.getElementById('panelTopic').innerText = info.event.title;
+        document.getElementById('panelGroup').innerText = props.group_name || 'Grupa';
+        document.getElementById('panelRoom').innerText = props.room || 'Online';
+        document.getElementById('panelDesc').innerText = props.description || 'Brak opisu';
+
+        // Formatowanie daty
+        var start = info.event.start;
+        var end = info.event.end;
+        var dateStr = start.toLocaleDateString('pl-PL');
+        var timeStr = start.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        if (end) {
+            timeStr += ' - ' + end.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        }
+
+        document.getElementById('panelDate').innerText = dateStr;
+        document.getElementById('panelTime').innerText = timeStr;
+        
+        // Ustawienie linków przycisków
+        document.getElementById('btnAttendance').href = "/attendance/" + info.event.id;
+        document.getElementById('btnEdit').href = "/lesson/edit/" + info.event.id;
+
+        // Pokaż panel
+        detailsPanel.show();
+      },
+      
+      eventMouseEnter: function(info) {
+        info.el.style.cursor = 'pointer';
+      }
+    });
+
+    calendar.render();
+  });
+</script>
+
+<style>
+    /* Dodatkowy styl, żeby kalendarz nie był "płaski" */
+    #calendar {
+        min-height: 600px;
+        background: white;
+    }
+</style>
+
+{% endblock %}
